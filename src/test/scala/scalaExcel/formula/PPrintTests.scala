@@ -13,7 +13,7 @@ class PPrintTests(f : String) {
   @Test def test() = {
     val ast = Parser parsing f
     val pped = PPrinter.pprint(ast)
-    //println(s"$f => $ast => $pped")
+    println(s"$f => $ast => $pped")
     assertEquals(f, pped)
   }
 }

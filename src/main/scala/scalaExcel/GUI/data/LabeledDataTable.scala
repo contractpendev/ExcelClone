@@ -65,12 +65,12 @@ class LabeledDataTable( _dataWindow: DataWindow = DataWindow.DEFAULT,
    * @return
    */
   def dataCellFromTable(index: CellPos) = dataCellFromSheet(toSheetIndex(index))
-
+/*
   def data = LabeledDataTable.buildDataTable(
       _dataWindow.rowCount,
       _dataWindow.columnCount,
       dataCellFromTable)
-
+*/
   def updateContents(sheet: Sheet) = {
     new LabeledDataTable(_dataWindow.expandTo(Size(sheet.size._1, sheet.size._2)),
       _allHeaderWidths,
@@ -287,8 +287,8 @@ class LabeledDataTable( _dataWindow: DataWindow = DataWindow.DEFAULT,
  */
 object LabeledDataTable {
   type DataRow = ObservableBuffer[ObjectProperty[DataCell]]
-  type DataTable = ObservableBuffer[DataRow]
-
+  //type DataTable = ObservableBuffer[DataRow]
+/*
   def buildDataTable(rows: Int,
                      columns: Int,
                      dataGrabber: (CellPos) => DataCell): DataTable = {
@@ -297,7 +297,7 @@ object LabeledDataTable {
         List.range(0, columns).map(c =>
           ObjectProperty(dataGrabber((c, r)))))
   }
-
+*/
   val DEFAULT_WIDTHS =
     List.fill(DataWindow.DEFAULT.dataSize.columnCount)(DefaultProperties.COLUMN_WIDTH.toDouble)
 }

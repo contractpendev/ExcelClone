@@ -1,6 +1,7 @@
-resolvers += Classpaths.sbtPluginReleases
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.0.1")
+// addSbtPlugin("org.wartremover" % "sbt-wartremover" % "2.2.1")
 
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.5.0")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.4")
+
 

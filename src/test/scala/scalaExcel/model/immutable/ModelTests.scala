@@ -9,7 +9,7 @@ import scalaExcel.model._
 import scalaExcel.model.immutable.OperationHelpers._
 
 class ModelTests {
-
+/*
   @Test def initializeModel() = {
     val model = new Model(
       Observable.just(Refresh)
@@ -51,5 +51,5 @@ class ModelTests {
 
     assertEquals(VDouble(10), cell.toBlocking.last)
   }
-
+*/
 }

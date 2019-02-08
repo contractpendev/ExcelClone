@@ -69,8 +69,6 @@ object CSSHelper {
 
   def toCSSMap(style: Styles): Map[String, String] = {
     Map(
-      "-fx-background-color" -> ("-fx-table-cell-border-color, " + colorToWeb(style.background)),
-      "-fx-text-fill" -> colorToWeb(style.color),
       "-fx-background-insets" -> "0, 0 0 1 0",
       "-fx-alignment" -> (style.align match {
         case LeftAlign => "CENTER-LEFT"

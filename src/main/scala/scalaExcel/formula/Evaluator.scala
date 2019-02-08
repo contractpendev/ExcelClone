@@ -226,6 +226,8 @@ object Evaluator {
       case "LEN"     => evalCallLen(ctx, args)
       case "TRIM"    => evalCallTrim(ctx, args)
 
+      case "TRUNC"   => evalCallTrunc(ctx, args)
+
       case "ISBLANK"   => evalCallIsBlank(ctx, desugarArgs(args))
       case "ISERROR"   => evalCallIsError(ctx, desugarArgs(args))
       case "ISNA"      => evalCallIsNA(ctx, desugarArgs(args))
@@ -418,6 +420,8 @@ object Evaluator {
   def evalCallLen = evalWithString(str => VDouble(str.length)) _
 
   def evalCallTrim = evalWithString(str => VString(str.trim)) _
+
+  def evalCallTrunc = evalWithString(str => VString(str.toDouble.toInt.toString)) _
 
   // IS functions
 

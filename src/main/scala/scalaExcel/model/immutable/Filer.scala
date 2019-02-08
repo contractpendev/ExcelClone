@@ -6,9 +6,6 @@ import scalaExcel.model._
 import scalafx.scene.paint.Color
 import scalaExcel.GUI.util.CSSHelper
 import scalaExcel.formula.{VBool, VDouble, VString, Value}
-import scala.pickling._
-import scala.pickling.Defaults._
-import json._
 
 
 /**
@@ -107,6 +104,7 @@ object Filer {
     // Pickling Sheet itself causes compiler to hang
     // Pickling Color class produces empty pickle
     // Pickling case class not working
+    /*PLA: REMOVED
     try {
       val structure : FileTypeSerialized = (
         sheet.cells.mapValues(_.f),
@@ -121,12 +119,12 @@ object Filer {
       println("Save completed")
     } catch {
       case e: Throwable => println("Moooom, scala.pickling is broken again: " + e)
-    }
+    }*/
   }
 
   /** Load from a file of the custom file type */
   def loadHomebrew(file: File) : FileType = {
-    val source = Source.fromFile(file)
+    /*PLA REMOVED val source = Source.fromFile(file)
     val json: String = source.mkString
     source.close()
     val data = JSONPickle(json).unpickle[FileTypeSerialized]
@@ -137,7 +135,8 @@ object Filer {
         deserializeFormat(format),
         deserializeAlignment(align)
       )
-    })
+    })*/
+    return null;
   }
 
 
