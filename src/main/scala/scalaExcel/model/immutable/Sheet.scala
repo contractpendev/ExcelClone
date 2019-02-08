@@ -17,6 +17,9 @@ class Sheet(private[immutable] val cells: Map[CellPos, Cell] = Map(),
             private[immutable] val dependents: Map[CellPos, List[CellPos]] = Map(),
             private[immutable] val styles: Map[CellPos, Styles] = Map()) extends scalaExcel.model.Sheet {
 
+
+  def dependentsPub = dependents
+
   /** Get the number of rows in the sheet */
   lazy val rows = if (cells.isEmpty) 0 else cells.keys.maxBy(_._2)._2 + 1
   /** Get the number of columns in the sheet */

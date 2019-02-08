@@ -13,9 +13,12 @@ class MyTest {
   @Test def testDefaultFormat() {
 
     val sheet = new Sheet()
-    val a = sheet.setCell( (0,0), "100")
-    val b = a.setCell( (0,1), "=A1")
-    assert(b.getValue( (0,1) ) == VDouble(100.0))
+    val sheet1 = sheet.setCell( (0,0), "100")
+    val sheet2 = sheet1.setCell( (0,1), "50")
+    val sheet3 = sheet2.setCell( (0,2), "=A1+A2")
+    println(pprint.apply(sheet3.getCell(0, 2).AST))
+
+    assert(sheet3.getValue( (0,2) ) == VDouble(150.0))
 
     //val style = Styles.DEFAULT.setFormat(DefaultValueFormat)
     //assertEquals("123.46", style.format(VDouble(123.4567)))
