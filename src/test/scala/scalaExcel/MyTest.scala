@@ -36,8 +36,8 @@ class MyTest {
       .setCell((1, 1), "=$A$1+1")
       .setCell((3, 0), "=B1/0.5")
 
-    inputs += Seq(CellInput("name1", CellReference(DataTypeDouble, 0, 0), DataModelFieldReference("fieldName", "ClassName", "package.name")),
-      CellInput("name2", CellReference(DataTypeDouble, 1, 0), DataModelFieldReference("fieldName", "ClassName", "package.name")))
+    inputs += Seq(CellInput("name1", CellReference(DataTypeDouble, 0, 0), DataModelFieldReference("field1", "ClassName", "package.name")),
+      CellInput("name2", CellReference(DataTypeDouble, 1, 0), DataModelFieldReference("field2", "ClassName", "package.name")))
     outputs += Seq(CellOutput("nameOutput2", CellReference(DataTypeDouble, 3, 0), DataModelFieldReference("fieldNameOutput", "ClassName", "package.name")))
 
     sheets += new Sheet()
@@ -237,24 +237,34 @@ class MyTest {
 
     val inputBindings = Seq[String]()
 
-
     val clauseInputBindings = for (b <- codeGen.calculations.inputBindings.zipWithIndex) yield {
       s"    let input${b._2 + 1}: Double = request.${b._1.modelFieldName};"
     }
 
     val mapFieldNameToIndex = (for (b <- codeGen.calculations.inputBindings.zipWithIndex) yield (b._1.modelFieldName, b._2+1)).toMap
 
+    println("All model field names ----")
+    for (z <- codeGen.calculations.sheets;
+        k <- z.input) {
+      println(k.modelFieldReference.modelFieldName)
+    }
+    println("---")
     val seqInputs = for (z <- codeGen.calculations.sheets.head.input) yield z.modelFieldReference.modelFieldName
 
     val clauseOutputBindings = for (b <- codeGen.calculations.outputBindings.zipWithIndex) yield {
       val name = b._1.ioSheet.name
       val outputName = b._1.ioSheet.output.head.name
-      // @todo These names are wrong, its true that there are 2 names but the names must be input[n]
-      // @todo so where is the mapping from inputs to outputs?
+
       val names = (for (i <- seqInputs) yield {
         "input" + mapFieldNameToIndex(i)
       }).mkString(", ")
-      s"    let output${b._2 + 1}: Double = spreadsheetFunction_${name}_${outputName}(${names});"
+
+      val modelFieldNames = for (k <- b._1.ioSheet.input) yield {
+        "input" + mapFieldNameToIndex(k.modelFieldReference.modelFieldName)
+      }
+      val modelFieldNamesMkstring = modelFieldNames.mkString(", ")
+
+      s"    let output${b._2 + 1}: Double = spreadsheetFunction_${name}_${outputName}(${modelFieldNamesMkstring});"
     }
 
     val responseOutputBindings = for (b <- codeGen.calculations.outputBindings.zipWithIndex) yield {
@@ -301,21 +311,18 @@ class MyTest {
     val clauseFunctionName = "helloworld"
     val requestClassName = "MyRequest"
     val responseClassName = "MyResponse"
-
-    for (i <- sheets.head.input) yield {
-      i.modelFieldReference
-    }
-
     val inputBindings = Seq(DataModelFieldReferenceBinding("field1", "sheet1", "name", "param1"),
       DataModelFieldReferenceBinding("field2", "sheet2", "name", "param2"),
       DataModelFieldReferenceBinding("field3", "sheet3", "name", "param3"))
-
-    val outputBindings = Seq[DataModelFieldReferenceOutput](DataModelFieldReferenceOutput("fieldNameInTheResponse1", sheets(0)))
-
+    val outputBindings = Seq[DataModelFieldReferenceOutput](DataModelFieldReferenceOutput("fieldNameInTheResponse1", sheets(0)),
+      DataModelFieldReferenceOutput("fieldNameInTheResponse2", sheets(1)))
     val calculations = Calculations(sheets, packages, namespace, contractName, clauseFunctionName, requestClassName, responseClassName,
       inputBindings, outputBindings)
 
-    val ergoCode = for (sheet <- calculations.sheets.take(1)) yield {
+
+
+
+    val ergoCode = for (sheet <- calculations.sheets) yield {
       val lines = mutable.Buffer[ErgoLine]()
       //println("")
       //println("Sheet " + sheet.name + " ---------------------------------------------------------------------------------------")
@@ -346,6 +353,8 @@ class MyTest {
     }
 
     val codeGen = ErgoCodeGen(calculations, ergoCode)
+
+
 
     println("-------------------- generate code")
     println("")
