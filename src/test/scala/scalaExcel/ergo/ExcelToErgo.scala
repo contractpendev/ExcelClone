@@ -111,13 +111,45 @@ object ExcelToErgo {
 
   // A reference to a data model field
   case class DataModelFieldReference(modelFieldName: String, modelFieldClassName: String, modelFieldNamespace: String)
+  case class DataModelFieldReferenceOutput(fieldNameInTheOutput: String, ioSheet: IOSheet)
+  // Hard to explain
+  case class DataModelFieldReferenceBinding(modelFieldName: String, spreadsheetName: String, spreadsheetOutputName: String, spreadsheetParameterName: String)
   // Reference in a spreadsheet
   case class CellReference(typeOf: DataType, cellCol: Int, cellRow: Int)
   case class CellInput(name: String, cellReference: CellReference, modelFieldReference: DataModelFieldReference)
+  case class CellOutput(name: String, cellReference: CellReference, modelFieldReference: DataModelFieldReference)
 
-  case class IOSheet(name: String, input: Seq[CellInput], output: Seq[CellReference], sheet: Sheet)
+  case class IOSheet(name: String, input: Seq[CellInput], output: Seq[CellOutput], sheet: Sheet)
 
-  case class ErgoCode(code: String)
+
+
+
+  // Convert from Calculations to ErgoCode
+  case class Calculations(sheets: Seq[IOSheet],
+                          importPackages: Seq[String],
+                          namespace: String,
+                          contractName: String,
+                          clauseFunctionName: String,
+                          requestClassName: String,
+                          responseClassName: String,
+                          inputBindings: Seq[DataModelFieldReferenceBinding],
+                          outputBindings: Seq[DataModelFieldReferenceOutput]
+    )
+  case class ErgoCode(code: Seq[ErgoLine])
+  object ErgoCode {
+    def changeToString(code: Seq[ErgoLine]): String = {
+      (for (c <- code) yield c.line).mkString("\n")
+    }
+
+    def fromString(str: String) = {
+      ErgoCode(Seq(ErgoLine(str)))
+    }
+  }
+
+  case class ErgoCodeGen(calculations: Calculations, ergoCode: Seq[ErgoCode])
+
+
+
 
   def percentToDoubleString(code: String): String = {
     // Assume code is a number
@@ -127,7 +159,7 @@ object ExcelToErgo {
 
   private def ergoTreeToCode(tree: ErgoExpression, inputs: Seq[CellInput]): ErgoCode = {
     tree match {
-      case num: ErgoNumber => ErgoCode(s"${num.number}")
+      case num: ErgoNumber => ErgoCode.fromString(s"${num.number}")
       case Expression2(opType: OperationType, left, right) => {
         val op = opType match {
           case Sum => "+"
@@ -143,35 +175,35 @@ object ExcelToErgo {
           }
         }
         val a = for (r <- Seq(left, right)) yield ergoTreeToCode(r, inputs)
-        ErgoCode(s"(${a(0).code}) $op (${a(1).code})")
+        ErgoCode.fromString(s"(${ErgoCode.changeToString(a(0).code)}) $op (${ErgoCode.changeToString(a(1).code)})")
       }
       case Expression1(opType: OperationType, left) => {
         val code = ergoTreeToCode(left, inputs)
         opType match {
-          case Percentage => ErgoCode(percentToDoubleString(code.code))
+          case Percentage => ErgoCode.fromString(percentToDoubleString(ErgoCode.changeToString(code.code)))
           case z: Object => {
             println("Unhandled case " + z)
-            ErgoCode("")
+            ErgoCode.fromString("")
           }
         }
       }
       case ErgoInputName(name: String) => {
-        ErgoCode(name)
+        ErgoCode.fromString(name)
       }
       case FunctionCall(functionName, parameters: Seq[ErgoExpression]) => {
         val parametersCode = for (p <- parameters) yield {
-          val code = ergoTreeToCode(p, inputs).code
+          val code = ErgoCode.changeToString(ergoTreeToCode(p, inputs).code)
           s"($code)"
         }
         functionName match {
-          case FUNCTION_SUM => ErgoCode(parametersCode.mkString(" + "))
+          case FUNCTION_SUM => ErgoCode.fromString(parametersCode.mkString(" + "))
           case FUNCTION_AVERAGE => {
             val commaSep = parametersCode.mkString(", ")
-            ErgoCode(s"average([$commaSep])")
+            ErgoCode.fromString(s"average([$commaSep])")
           }
           case FUNCTION_POWER => {
             val sep = parametersCode.mkString(" ^ ")
-            ErgoCode(sep)
+            ErgoCode.fromString(sep)
           }
           /*@todo Unknown so far...
           case FUNCTION_ROUND => {
@@ -179,43 +211,44 @@ object ExcelToErgo {
             ErgoCode(sep)
           }*/
           case FUNCTION_ROUND => {
-            ErgoCode("The case is not handled yet")
+            ErgoCode.fromString("The case is not handled yet")
           }
           case FUNCTION_ROW => {
-            ErgoCode(parametersCode.head)
+            ErgoCode.fromString(parametersCode.head)
           }
           case FUNCTION_ROWS => {
-            ErgoCode(parametersCode.head)
+            ErgoCode.fromString(parametersCode.head)
           }
           case FUNCTION_COLUMN => {
-            ErgoCode(parametersCode.head)
+            ErgoCode.fromString(parametersCode.head)
           }
           case FUNCTION_COLUMNS => {
-            ErgoCode(parametersCode.head)
+            ErgoCode.fromString(parametersCode.head)
           }
           case _ => {
-            ErgoCode("This case is not handled yet")
+            ErgoCode.fromString("This case is not handled yet")
           }
         }
       }
       case other: Object => {
         println("unhandled case 55: " + other)
-        ErgoCode("")
+        ErgoCode.fromString("")
       }
     }
   }
 
-  case class CellWrap(name: Option[String], cell: Option[scalaExcel.model.Cell])
+  case class InputNameElseCellRef(name: Option[String], cell: Option[scalaExcel.model.Cell])
 
-  private def getCellWrap(sheet: Sheet, inputs: Seq[CellInput], col: Int, row: Int): CellWrap = {
+  private def getCellWrap(sheet: Sheet, inputs: Seq[CellInput], col: Int, row: Int): InputNameElseCellRef = {
     val f = inputs.find(c => (c.cellReference.cellCol == col) && (c.cellReference.cellRow == row))
-    if (f.isDefined)
-      CellWrap(Some(f.get.name), None)
+    if (f.isDefined) {
+      InputNameElseCellRef(Some(f.get.name), None)
+    }
     else
-      CellWrap(None, Some(sheet.getCell((col, row))))
+      InputNameElseCellRef(None, Some(sheet.getCell((col, row))))
   }
 
-  private def cellWrapToErgoTree(sheet: Sheet, cellWrap: CellWrap, inputs: Seq[CellInput]): ErgoExpression = {
+  private def cellWrapToErgoTree(sheet: Sheet, cellWrap: InputNameElseCellRef, inputs: Seq[CellInput]): ErgoExpression = {
     if (cellWrap.cell.isDefined)
       cellWrapToErgoTree(sheet, cellWrap.cell.get.AST, inputs)
     else
@@ -375,7 +408,7 @@ object ExcelToErgo {
     value match {
       case d: VDouble => ErgoNumber(d.d)
       case s: VString => ErgoString(s.s)
-      case other: Value => ErgoNumber(0.0f)
+      //case other: Value => ErgoNumber(0.0f)
       case other: Any => {
         println("Unhandled case 4: " + other)
         ErgoNumber(0.0f)
@@ -383,26 +416,25 @@ object ExcelToErgo {
     }
   }
 
-  def toErgoLine(sheet: Sheet, ast: Expr, inputs: Seq[CellInput]): ErgoLine = {
+  def toErgoLine(sheet: Sheet, ast: Expr, inputs: Seq[CellInput]): Seq[ErgoLine] = {
+
     val tree = cellWrapToErgoTree(sheet, ast, inputs)
-    ErgoLine(ergoTreeToCode(tree, inputs).code)
+    ergoTreeToCode(tree, inputs).code
   }
 
-  def toErgoCode(sheet: Sheet, bindings: Bindings, inputs: Seq[CellInput]): Ergo = {
+  def toErgoCode(functionName: String, sheet: IOSheet, bindings: Bindings, inputs: Seq[CellInput]): Ergo = {
 
-    /*val prefix: Seq[ErgoLine] = {
-      for (p <- Seq("define function average(parameters : Array[Double]) : Double {",
-        " code here }", "")) yield ErgoLine(p)
-    }*/
+    val inputParameters = (for (i <- inputs) yield s"${i.name}: Double").mkString(", ")
 
-    val lines: Seq[ErgoLine] = for (b <- bindings.bindings) yield {
-      val v = ergoTreeToCode(cellWrapToErgoTree(sheet, b.ast, inputs), inputs)
-      ErgoLine(s"  let ${b.variableName} : Double = ${v.code};")
-    }
-    val lines2: Seq[ErgoLine] = ErgoLine("define function area(radius : Double) : Double {") +: lines
+    val lines: Seq[ErgoLine] = (for (b <- bindings.bindings) yield {
+      val v = ergoTreeToCode(cellWrapToErgoTree(sheet.sheet, b.ast, inputs), inputs)
+      Seq(ErgoLine(s"  let ${b.variableName} : Double = ${ErgoCode.changeToString(v.code)};"),
+        ErgoLine(s"  let result : Double = ${b.variableName};"),
+      ErgoLine(s"  return result;"))
+    }).flatten
+
+    val lines2: Seq[ErgoLine] = ErgoLine(s"define function ${functionName}($inputParameters) : Double {") +: lines
     val lines3: Seq[ErgoLine] = lines2 :+ ErgoLine("}")
-
-    //val lines4: Seq[ErgoLine] = prefix ++ lines3
 
     Ergo(lines3)
   }
