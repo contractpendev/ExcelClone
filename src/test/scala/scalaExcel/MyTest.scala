@@ -230,8 +230,6 @@ class MyTest {
     val t = ExcelToErgo.getType("1")
     println(t)
 
-
-
     val sheets = testSpreadsheets()
 
     val packages = Seq("org.accordproject.cicero.runtime.*")
@@ -247,10 +245,6 @@ class MyTest {
       DataModelFieldReferenceOutput("fieldNameInTheResponse2", sheets(1)))
     val calculations = Calculations(sheets, packages, namespace, contractName, clauseFunctionName, requestClassName, responseClassName,
       inputBindings, outputBindings)
-
-
-
-
 
 
     val codeGen = ErgoCodeGen(calculations, Seq.empty)
