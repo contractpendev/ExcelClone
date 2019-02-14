@@ -111,14 +111,14 @@ object ExcelToErgo {
 
   // A reference to a data model field
   case class DataModelFieldReference(modelFieldName: String)
-  case class DataModelFieldReferenceOutput(fieldNameInTheOutput: String, ioSheet: IOSheet)
+  case class DataModelFieldReferenceOutput(fieldNameInTheOutput: String, ioSheet: IOSheet, cellOutput: CellOutput)
   case class DataModelFieldReferenceInput(modelFieldName: String/*, spreadsheetName: String, spreadsheetOutputName: String, spreadsheetParameterName: String*/)
   // Hard to explain
   case class DataModelFieldReferenceBinding(modelFieldName: String, spreadsheetName: String, spreadsheetOutputName: String, spreadsheetParameterName: String)
   // Reference in a spreadsheet
   case class CellReference(typeOf: DataType, cellCol: Int, cellRow: Int)
   case class CellInput(name: String, cellReference: CellReference, modelFieldReference: DataModelFieldReference)
-  case class CellOutput(name: String, cellReference: CellReference)
+  case class CellOutput(outputFunctionName: String, cellReference: CellReference)
 
   case class IOSheet(name: String, input: Seq[CellInput], output: Seq[CellOutput], sheet: Sheet)
 

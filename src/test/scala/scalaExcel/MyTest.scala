@@ -27,7 +27,10 @@ class MyTest {
 
     inputs += Seq(CellInput("name1", CellReference(DataTypeDouble, 0, 0), DataModelFieldReference("field2")),
       CellInput("name2", CellReference(DataTypeDouble, 0, 1), DataModelFieldReference("field1")))
-    outputs += Seq(CellOutput("nameOutput1", CellReference(DataTypeDouble, 0, 2)))
+    outputs += Seq(CellOutput("nameOutput1", CellReference(DataTypeDouble, 0, 2)),
+      CellOutput("nameOutputSecond1", CellReference(DataTypeDouble, 0, 1)),
+        CellOutput("nameOutputThird1", CellReference(DataTypeDouble, 0, 0))
+    )
 
     sheets += new Sheet()
       .setCell((0, 0), "1")
@@ -241,8 +244,10 @@ class MyTest {
     val inputBindings = Seq(DataModelFieldReferenceInput("field1"),
       DataModelFieldReferenceInput("field2"),
       DataModelFieldReferenceInput("field3"))
-    val outputBindings = Seq[DataModelFieldReferenceOutput](DataModelFieldReferenceOutput("fieldNameInTheResponse1", sheets(0)),
-      DataModelFieldReferenceOutput("fieldNameInTheResponse2", sheets(1)))
+    val outputBindings = Seq[DataModelFieldReferenceOutput](
+      DataModelFieldReferenceOutput("fieldNameInTheResponse1", sheets(0), sheets(0).output(0)),
+      DataModelFieldReferenceOutput("fieldNameInTheResponse2", sheets(0), sheets(0).output(1)),
+      DataModelFieldReferenceOutput("fieldNameInTheResponse3", sheets(0), sheets(0).output(2)))
     val calculations = Calculations(sheets, packages, namespace, contractName, clauseFunctionName, requestClassName, responseClassName,
       inputBindings, outputBindings)
 

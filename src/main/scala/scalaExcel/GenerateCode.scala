@@ -30,7 +30,7 @@ object GenerateCode {
       for (out <- sheet.output) {
         val ast = sheet.sheet.getCell(out.cellReference.cellCol, out.cellReference.cellRow).AST
         val outputBindings = Seq(Binding(nameFromCell(sheet.name, out.cellReference), out.cellReference.cellCol, out.cellReference.cellRow, ast))
-        val functionName = functionNameFrom(sheet.name, out.name)
+        val functionName = functionNameFrom(sheet.name, out.outputFunctionName)
         val ergo = ExcelToErgo.toErgoCode(functionName, sheet, Bindings(outputBindings), sheet.input)
         //val v = sheet.sheet.getValue((out.cellReference.cellCol, out.cellReference.cellRow))
         //println(v)
@@ -65,7 +65,7 @@ object GenerateCode {
 
     val clauseOutputBindings = for (b <- codeGen.calculations.outputBindings.zipWithIndex) yield {
       val name = b._1.ioSheet.name
-      val outputName = b._1.ioSheet.output.head.name
+      val outputName = b._1.cellOutput.outputFunctionName
 
       val names = (for (i <- seqInputs) yield {
         "input" + mapFieldNameToIndex(i)
